@@ -1,1 +1,1 @@
-web: gunicorn caesar_cipher:app
+web: python caesar_cipher.py
