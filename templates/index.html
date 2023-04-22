@@ -20,5 +20,24 @@
     <h2>Encrypted Text:</h2>
     <p>{{ encrypted_text }}</p>
     {% endif %}
+    
+    <script>
+document.querySelector('form').addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const formData = new FormData(event.target);
+  const data = Object.fromEntries(formData.entries());
+  const response = await fetch('/encrypt', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data),
+  });
+  const result = await response.json();
+  // Display the encrypted text or handle the result as needed
+  console.log(result.encrypted_text);
+});
+</script>
+
   </body>
 </html>
