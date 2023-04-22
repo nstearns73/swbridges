@@ -1,5 +1,5 @@
 import os
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 
 app = Flask(__name__)
 
@@ -18,17 +18,14 @@ def encrypt_caesar_cipher(text, shift):
 
     return encrypted_text
 
-@app.route('/')
+@app.route('/', methods=['GET', 'POST'])
 def index():
-    return "Welcome to the Caesar cipher API! Use the /encrypt endpoint with a POST request to encrypt text."
-
-@app.route('/encrypt', methods=['POST'])
-def encrypt_route():
-    data = request.get_json()
-    text = data.get('text', '')
-    shift = data.get('shift', 0)
-    encrypted_text = encrypt_caesar_cipher(text, shift)
-    return jsonify({"encrypted_text": encrypted_text})
+    encrypted_text = None
+    if request.method == 'POST':
+        text = request.form.get('text', '')
+        shift = int(request.form.get('shift', 0))
+        encrypted_text = encrypt_caesar_cipher(text, shift)
+    return render_template('index.html', encrypted_text=encrypted_text)
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=int(os.environ.get('PORT', 8080)))
