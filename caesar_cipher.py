@@ -18,6 +18,10 @@ def encrypt_caesar_cipher(text, shift):
 
     return encrypted_text
 
+@app.route('/')
+def index():
+    return "Welcome to the Caesar cipher API! Use the /encrypt endpoint with a POST request to encrypt text."
+
 @app.route('/encrypt', methods=['POST'])
 def encrypt_route():
     data = request.get_json()
