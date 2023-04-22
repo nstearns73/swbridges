@@ -1,25 +1,9 @@
-def encrypt_caesar_cipher(text, shift):
-    encrypted_text = ""
-
-# caesar_cipher.py
 from flask import Flask, request, jsonify
 
 app = Flask(__name__)
 
 def encrypt_caesar_cipher(text, shift):
-    # ... (the rest of the function code)
-
-@app.route('/encrypt', methods=['POST'])
-def encrypt_route():
-    data = request.get_json()
-    text = data.get('text', '')
-    shift = data.get('shift', 0)
-    encrypted_text = encrypt_caesar_cipher(text, shift)
-    return jsonify({"encrypted_text": encrypted_text})
-
-if __name__ == '__main__':
-    app.run()
-  
+    encrypted_text = ""
 
     for char in text:
         if char.isalpha():
@@ -32,3 +16,14 @@ if __name__ == '__main__':
             encrypted_text += char
 
     return encrypted_text
+
+@app.route('/encrypt', methods=['POST'])
+def encrypt_route():
+    data = request.get_json()
+    text = data.get('text', '')
+    shift = data.get('shift', 0)
+    encrypted_text = encrypt_caesar_cipher(text, shift)
+    return jsonify({"encrypted_text": encrypted_text})
+
+if __name__ == '__main__':
+    app.run(debug=True, host='0.0.0.0', port=int(os.environ.get('PORT', 8080)))
