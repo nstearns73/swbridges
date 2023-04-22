@@ -3,7 +3,7 @@ from caesar_cipher import encrypt_caesar_cipher, main
 
 app = Flask(__name__)
 
-@app.route('/', methods=['GET', 'POST'])
+@app.route('/encrypt', methods=['POST'])
 def cipher_game():
     message = "Look under the podium!"
     shift = 3
