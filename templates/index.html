@@ -1,5 +1,28 @@
 <!doctype html>
 <html lang="en">
+   document.querySelector('form').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    try {
+        const formData = new FormData(event.target);
+        const data = Object.fromEntries(formData.entries());
+        const response = await fetch('/encrypt', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data),
+        });
+        if (response.ok) {
+            const result = await response.json();
+            // Display the encrypted text
+            document.getElementById('encrypted-text').innerText = result.encrypted_text;
+        } else {
+            console.error('Error:', response.status, response.statusText);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+    }
+});
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
@@ -31,30 +54,6 @@
             document.getElementById('encrypted-text').innerText = result.encrypted_text;
         });
     </script>
-    
-  document.querySelector('form').addEventListener('submit', async (event) => {
-    event.preventDefault();
-    try {
-        const formData = new FormData(event.target);
-        const data = Object.fromEntries(formData.entries());
-        const response = await fetch('/encrypt', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(data),
-        });
-        if (response.ok) {
-            const result = await response.json();
-            // Display the encrypted text
-            document.getElementById('encrypted-text').innerText = result.encrypted_text;
-        } else {
-            console.error('Error:', response.status, response.statusText);
-        }
-    } catch (error) {
-        console.error('Error:', error);
-    }
-});
   
   </body>
 </html>
