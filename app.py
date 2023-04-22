@@ -9,6 +9,7 @@ def index():
 
 @app.route('/encrypt', methods=['POST'])
 def encrypt_route():
+    print("Encrypt route called")
     data = request.get_json()
     text = data.get('text', '')
     shift = data.get('shift', 0)
