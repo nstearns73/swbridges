@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Caesar Cipher Game</title>
+  </head>
+  <body>
+    <h1>Caesar Cipher Game</h1>
+    <form action="/encrypt" method="post">
+      <label for="text">Text:</label>
+      <input type="text" id="text" name="text" required>
+      <br>
+      <label for="shift">Shift:</label>
+      <input type="number" id="shift" name="shift" required>
+      <br>
+      <input type="submit" value="Encrypt">
+    </form>
+    {% if encrypted_text %}
+    <h2>Encrypted Text:</h2>
+    <p>{{ encrypted_text }}</p>
+    {% endif %}
+  </body>
+</html>
