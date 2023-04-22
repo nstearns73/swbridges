@@ -1,6 +1,24 @@
 <!doctype html>
 <html lang="en">
-   document.querySelector('form').addEventListener('submit', async (event) => {
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Caesar Cipher Game</title>
+  </head>
+  <body>
+    <h1>Caesar Cipher Game</h1>
+<form>
+  <input type="text" name="text" placeholder="Enter text to encrypt">
+  <input type="number" name="shift" placeholder="Enter shift value">
+  <button type="submit">Encrypt</button>
+</form>
+
+    {% if encrypted_text %}
+    <h2>Encrypted Text:</h2>
+    <p>{{ encrypted_text }}</p>
+    {% endif %}
+<script>
+document.querySelector('form').addEventListener('submit', async (event) => {
     event.preventDefault();
     try {
         const formData = new FormData(event.target);
@@ -23,37 +41,6 @@
         console.error('Error:', error);
     }
 });
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>Caesar Cipher Game</title>
-  </head>
-  <body>
-    <h1>Caesar Cipher Game</h1>
-    <form>
-        <input type="text" name="text" placeholder="Enter text to encrypt">
-        <input type="number" name="shift" placeholder="Enter shift value">
-        <button type="submit">Encrypt</button>
-    </form>
-    <h2>Encrypted Text:</h2>
-    <p id="encrypted-text"></p> <!-- Add an id to this paragraph -->
-    <script>
-        document.querySelector('form').addEventListener('submit', async (event) => {
-            event.preventDefault();
-            const formData = new FormData(event.target);
-            const data = Object.fromEntries(formData.entries());
-            const response = await fetch('/encrypt', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(data),
-            });
-            const result = await response.json();
-            // Display the encrypted text
-            document.getElementById('encrypted-text').innerText = result.encrypted_text;
-        });
-    </script>
-  
+</script>    
   </body>
 </html>
