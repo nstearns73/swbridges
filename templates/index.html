@@ -7,32 +7,29 @@
   </head>
   <body>
     <h1>Caesar Cipher Game</h1>
-<form>
-  <input type="text" name="text" placeholder="Enter text to encrypt">
-  <input type="number" name="shift" placeholder="Enter shift value">
-  <button type="submit">Encrypt</button>
-</form>
-
-    {% if encrypted_text %}
+    <form>
+        <input type="text" name="text" placeholder="Enter text to encrypt">
+        <input type="number" name="shift" placeholder="Enter shift value">
+        <button type="submit">Encrypt</button>
+    </form>
     <h2>Encrypted Text:</h2>
-    <p>{{ encrypted_text }}</p>
-    {% endif %}
-<script>
-  document.querySelector('form').addEventListener('submit', async (event) => {
-    event.preventDefault();
-    const formData = new FormData(event.target);
-    const data = Object.fromEntries(formData.entries());
-    const response = await fetch('/encrypt', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(data),
-    });
-    const result = await response.json();
-    // Display the encrypted text or handle the result as needed
-    console.log(result.encrypted_text);
-  });
-</script>    
+    <p id="encrypted-text"></p> <!-- Add an id to this paragraph -->
+    <script>
+        document.querySelector('form').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            const data = Object.fromEntries(formData.entries());
+            const response = await fetch('/encrypt', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data),
+            });
+            const result = await response.json();
+            // Display the encrypted text
+            document.getElementById('encrypted-text').innerText = result.encrypted_text;
+        });
+    </script>
   </body>
 </html>
