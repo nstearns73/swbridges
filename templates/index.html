@@ -3,44 +3,337 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>Caesar Cipher Game</title>
+    <title>Sentence-By-Sentence Writing Coach</title>
+    <style>
+      :root {
+        font-family: Arial, sans-serif;
+        color: #0f172a;
+        background-color: #f8fafc;
+      }
+
+      body {
+        margin: 0;
+        padding: 24px;
+        background: #f8fafc;
+      }
+
+      h1 {
+        margin-top: 0;
+      }
+
+      .panel {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 16px;
+        box-shadow: 0 2px 6px rgba(15, 23, 42, 0.06);
+      }
+
+      textarea, input, button {
+        font-size: 16px;
+      }
+
+      textarea {
+        width: 100%;
+        min-height: 140px;
+        border-radius: 6px;
+        border: 1px solid #cbd5e1;
+        padding: 10px;
+        box-sizing: border-box;
+      }
+
+      button {
+        background: #2563eb;
+        color: #ffffff;
+        border: none;
+        border-radius: 6px;
+        padding: 10px 14px;
+        cursor: pointer;
+        margin-right: 8px;
+      }
+
+      button.secondary {
+        background: #e2e8f0;
+        color: #0f172a;
+      }
+
+      button:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+
+      .status {
+        padding: 10px;
+        border-radius: 6px;
+        background: #e0f2fe;
+        color: #075985;
+        margin-top: 8px;
+      }
+
+      .strong {
+        background: #ecfdf3;
+        color: #166534;
+      }
+
+      .issue {
+        background: #fff7ed;
+        color: #9a3412;
+      }
+
+      .flex-row {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+
+      .small-note {
+        color: #475569;
+        font-size: 14px;
+        margin-top: 6px;
+      }
+    </style>
   </head>
   <body>
-    <h1>Caesar Cipher Game</h1>
-<form>
-  <input type="text" name="text" placeholder="Enter text to encrypt">
-  <input type="number" name="shift" placeholder="Enter shift value">
-  <button type="submit">Encrypt</button>
-</form>
+    <h1>Sentence-By-Sentence Writing Coach</h1>
+    <div class="panel">
+      <p>Paste a paragraph or short passage. We'll look at one sentence at a time, offer targeted edits, show model sentences, and let you move on whenever you're ready.</p>
+      <label for="student-text"><strong>Your draft</strong></label>
+      <textarea id="student-text" placeholder="Drop your work here..."></textarea>
+      <div class="flex-row" style="margin-top: 12px;">
+        <button id="start-review">Start reviewing</button>
+        <span class="small-note">We never alter your draft automatically—you stay in control.</span>
+      </div>
+    </div>
 
-    {% if encrypted_text %}
-    <h2>Encrypted Text:</h2>
-    <p>{{ encrypted_text }}</p>
-    {% endif %}
-<script>
-document.querySelector('form').addEventListener('submit', async (event) => {
-    event.preventDefault();
-    try {
-        const formData = new FormData(event.target);
-        const data = Object.fromEntries(formData.entries());
-        const response = await fetch('/encrypt', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(data),
-        });
-        if (response.ok) {
-            const result = await response.json();
-            // Display the encrypted text
-            document.getElementById('encrypted-text').innerText = result.encrypted_text;
-        } else {
-            console.error('Error:', response.status, response.statusText);
+    <div class="panel" id="sentence-panel" hidden>
+      <h2>Current sentence</h2>
+      <p id="current-sentence" aria-live="polite"></p>
+      <div id="sentence-status" class="status" hidden></div>
+      <div class="flex-row">
+        <button id="accept-suggestion" hidden>Yes, let's try that</button>
+        <button id="skip-sentence" class="secondary" hidden>Skip this sentence</button>
+        <button id="next-strong" hidden>Next sentence</button>
+      </div>
+    </div>
+
+    <div class="panel" id="revision-panel" hidden>
+      <h3>Try the edit</h3>
+      <p id="suggestion-detail"></p>
+      <div id="model-example" class="status"></div>
+      <label for="revision-input"><strong>Your revision</strong></label>
+      <textarea id="revision-input" aria-label="Revision input"></textarea>
+      <div class="flex-row" style="margin-top: 12px;">
+        <button id="submit-revision">Check my revision</button>
+        <button id="skip-after-revision" class="secondary">Skip to next sentence</button>
+      </div>
+    </div>
+
+    <div class="panel" id="completion-panel" hidden>
+      <h2>All sentences reviewed</h2>
+      <p>Nice work! You can adjust your draft above and restart if you'd like another pass.</p>
+    </div>
+
+    <script>
+      const startButton = document.getElementById('start-review');
+      const sentencePanel = document.getElementById('sentence-panel');
+      const revisionPanel = document.getElementById('revision-panel');
+      const completionPanel = document.getElementById('completion-panel');
+      const currentSentenceEl = document.getElementById('current-sentence');
+      const sentenceStatus = document.getElementById('sentence-status');
+      const acceptButton = document.getElementById('accept-suggestion');
+      const skipSentenceButton = document.getElementById('skip-sentence');
+      const nextStrongButton = document.getElementById('next-strong');
+      const suggestionDetail = document.getElementById('suggestion-detail');
+      const modelExample = document.getElementById('model-example');
+      const revisionInput = document.getElementById('revision-input');
+      const submitRevision = document.getElementById('submit-revision');
+      const skipAfterRevision = document.getElementById('skip-after-revision');
+      const studentText = document.getElementById('student-text');
+
+      let sentences = [];
+      let currentIndex = 0;
+      let currentIssue = null;
+
+      const suggestions = {
+        specificity: {
+          label: 'Add concrete detail',
+          model: 'Model: Instead of "The project was very good," try "The science project compared soil pH and clearly explained why neutral levels grew the healthiest basil."',
+          guidance: 'Swap vague words for concrete nouns or actions so the reader can picture what you mean.'
+        },
+        clarity: {
+          label: 'Lead with the main actor',
+          model: 'Model: "The committee approved the proposal after two revisions" keeps the doer up front.',
+          guidance: 'Start with who/what is acting so the sentence feels direct.'
+        },
+        concision: {
+          label: 'Tighten the sentence',
+          model: 'Model: "Because the evidence was clear, the jury reached a verdict quickly" removes extra padding.',
+          guidance: 'Trim repeated or filler phrases to keep the sentence focused.'
+        },
+        development: {
+          label: 'Add a specific detail',
+          model: 'Model: "The opening scene hooks readers by showing Lina stealing power to light her hidden map."',
+          guidance: 'If the idea feels thin, add a concrete detail that illustrates the claim.'
+        },
+        voice: {
+          label: 'Use active voice',
+          model: 'Model: "Researchers tested the samples" instead of "The samples were tested by researchers."',
+          guidance: 'Put the doer before the action to make the sentence energetic.'
         }
-    } catch (error) {
-        console.error('Error:', error);
-    }
-});
-</script>    
+      };
+
+      function splitIntoSentences(text) {
+        return text
+          .split(/(?<=[.!?])\s+/)
+          .map(s => s.trim())
+          .filter(Boolean);
+      }
+
+      function analyzeSentence(sentence) {
+        const words = sentence.split(/\s+/).filter(Boolean);
+        const wordCount = words.length;
+        const issues = [];
+
+        const vagueWords = ['thing', 'things', 'stuff', 'something', 'someone', 'very', 'really', 'kind of'];
+        const hasVague = vagueWords.some(vague => sentence.toLowerCase().includes(vague));
+        if (hasVague) {
+          issues.push({ key: 'specificity', message: 'Tighten vague wording so the reader sees the idea.' });
+        }
+
+        const passiveVoicePattern = /(was|were|is|are|been|being|be)\s+\w+ed(\s+by)?/i;
+        if (passiveVoicePattern.test(sentence)) {
+          issues.push({ key: 'voice', message: 'Shift to active voice to spotlight the doer.' });
+        }
+
+        const fillerStart = /^(there\s+(is|are|was|were)|it\s+(is|was))/i;
+        if (fillerStart.test(sentence)) {
+          issues.push({ key: 'clarity', message: 'Lead with the main subject instead of a filler opener.' });
+        }
+
+        if (wordCount > 30) {
+          issues.push({ key: 'concision', message: 'Trim the sentence so the main idea is easy to follow.' });
+        }
+
+        if (wordCount > 0 && wordCount < 8) {
+          issues.push({ key: 'development', message: 'Add a detail so the idea feels fully stated.' });
+        }
+
+        return { wordCount, issues };
+      }
+
+      function showSentence() {
+        resetPanels();
+        if (currentIndex >= sentences.length) {
+          completionPanel.hidden = false;
+          return;
+        }
+
+        const sentence = sentences[currentIndex];
+        currentSentenceEl.textContent = sentence;
+        sentencePanel.hidden = false;
+
+        const evaluation = analyzeSentence(sentence);
+        currentIssue = evaluation.issues[0] || null;
+
+        if (!currentIssue) {
+          sentenceStatus.textContent = 'This opening reads strong. Ready for the next sentence?';
+          sentenceStatus.className = 'status strong';
+          sentenceStatus.hidden = false;
+          nextStrongButton.hidden = false;
+          skipSentenceButton.hidden = false;
+        } else {
+          sentenceStatus.textContent = `${currentIssue.message} (${evaluation.wordCount} words).`;
+          sentenceStatus.className = 'status issue';
+          sentenceStatus.hidden = false;
+          acceptButton.hidden = false;
+          skipSentenceButton.hidden = false;
+        }
+      }
+
+      function resetPanels() {
+        sentenceStatus.hidden = true;
+        acceptButton.hidden = true;
+        skipSentenceButton.hidden = true;
+        nextStrongButton.hidden = true;
+        revisionPanel.hidden = true;
+        suggestionDetail.textContent = '';
+        modelExample.textContent = '';
+        revisionInput.value = '';
+      }
+
+      function showSuggestion(issueKey) {
+        const suggestion = suggestions[issueKey];
+        if (!suggestion) return;
+        revisionPanel.hidden = false;
+        suggestionDetail.textContent = `${suggestion.label}: ${suggestion.guidance}`;
+        modelExample.textContent = suggestion.model;
+        modelExample.className = 'status';
+        revisionInput.value = sentences[currentIndex];
+      }
+
+      function checkIssueResolved(sentence, keyToCheck) {
+        const evaluation = analyzeSentence(sentence);
+        const stillProblem = evaluation.issues.some(issue => issue.key === keyToCheck);
+        return { resolved: !stillProblem, remainingIssues: evaluation.issues };
+      }
+
+      function advanceSentence() {
+        currentIndex += 1;
+        showSentence();
+      }
+
+      startButton.addEventListener('click', () => {
+        sentences = splitIntoSentences(studentText.value);
+        currentIndex = 0;
+        completionPanel.hidden = true;
+        if (sentences.length === 0) {
+          sentencePanel.hidden = true;
+          revisionPanel.hidden = true;
+          completionPanel.hidden = false;
+          completionPanel.querySelector('p').textContent = 'Please add at least one sentence to get started.';
+          return;
+        }
+        showSentence();
+      });
+
+      acceptButton.addEventListener('click', () => {
+        if (!currentIssue) return;
+        showSuggestion(currentIssue.key);
+      });
+
+      nextStrongButton.addEventListener('click', advanceSentence);
+      skipSentenceButton.addEventListener('click', advanceSentence);
+      skipAfterRevision.addEventListener('click', advanceSentence);
+
+      submitRevision.addEventListener('click', () => {
+        if (!currentIssue) return;
+        const revised = revisionInput.value.trim();
+        if (!revised) return;
+
+        const { resolved, remainingIssues } = checkIssueResolved(revised, currentIssue.key);
+
+        if (resolved && remainingIssues.length === 0) {
+          sentenceStatus.textContent = 'Nice revision! This sentence reads strong. Moving to the next one when you are ready.';
+          sentenceStatus.className = 'status strong';
+          sentenceStatus.hidden = false;
+          revisionPanel.hidden = true;
+          nextStrongButton.hidden = false;
+          skipSentenceButton.hidden = false;
+        } else if (resolved) {
+          const nextIssue = remainingIssues[0];
+          currentIssue = nextIssue;
+          sentenceStatus.textContent = 'Good fix! There is one more improvement to consider.';
+          sentenceStatus.className = 'status issue';
+          sentenceStatus.hidden = false;
+          showSuggestion(nextIssue.key);
+        } else {
+          sentenceStatus.textContent = 'That edit did not address the suggestion yet. Try again or skip to keep moving.';
+          sentenceStatus.className = 'status issue';
+          sentenceStatus.hidden = false;
+        }
+      });
+    </script>
   </body>
 </html>
